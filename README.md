@@ -1,5 +1,5 @@
 # 🧬 Project Overview
-## Background
+## 🧬 Background
 Physiological responses to exercise are generally predictable. For example, resistance training leads to increased strength and muscle hypertrophy, while endurance training improves aerobic capacity. However, modern exercise science still struggles to determine the optimal combination of volume, intensity, duration, frequency, and timing of exercise stimuli to maximize an individual’s health, fitness, and performance outcomes.
 
 As George Brooks, a pioneer in the field, aptly put it:
@@ -16,18 +16,18 @@ This is beginning to change with the application of single-cell RNA sequencing (
 
 However, scRNA-seq studies are still limited in scope (the specific problems they address) and breadth (the number of subjects and samples they can analyze). A key constraint is funding, as sequencing costs rise significantly with the number of subjects and the depth of sequencing required to capture more gene expression data. The more genes researchers aim to measure, the more library preparation and sequencing depth is needed—driving up costs exponentially.
 
-## Project Goals
+## 🧬 Project Goals
 The goal of this project is to explore whether we can predict the expression of a subset of genes in skeletal muscle cells using the expression levels of other genes as input to a predictive model. If successful, this approach could allow researchers to capture more samples before and after exercise with lower sequencing depth, reducing costs. By imputing or predicting gene expression levels, exercise scientists could gain deeper insights into the body’s adaptive responses to training.
 
 While this method may not achieve the level of precision required for clinical or high-level bioinformatics research, it could provide a valuable tool for exercise scientists seeking to understand how different exercise stimuli affect gene expression. Additionally, there may be potential applications in high-performance sports, where athletes and coaches aim to optimize training regimens to maximize adaptation rates through variations in volume, intensity, and frequency.
 
 # 🧬 Project Walkthrough
-## Data Availability 
+## 🧬 Data Availability 
 The data for this project comes from a study called "Single-cell transcriptional profiles in human skeletal muscle," which is accessible via the Gene Expression Omnibus (GEO) via the following accession number: [GSE130646](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi). 
 
 Additionally, we can access the Single-cell RNA sequencing data, resulting from each subject's muscle biopsy, using the following accession numbers: [GSM3746212](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM3746212), [GSM3746213](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM3746213), [GSM3746214](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM3746214), and [GSM3746215](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSM3746215).
 
-## Import libraries 
+## 🧬 Import libraries 
 Before loading the data above, I'll first import the following Python libraries, which will be used in downstream analyses:
 ```python
 import pandas as pd
@@ -49,7 +49,7 @@ from sklearn.model_selection import cross_val_score, KFold
 import joblib
 ```
 
-## Load, Prepare, and Inspect Data
+## 🧬 Load, Prepare, and Inspect Data
 Next, we'll use Bash's wget command to retrieve each subject's Single-cell RNA-seq data, and following that, we'll use the Bash gunzip command to decompress the files:
 
 ```bash
@@ -109,7 +109,7 @@ Which produces the following output:
   - Number of Genes: 15406
   - Number of Cells: 2876
 
-## Data Preperation
+## 🧬 Data Preperation
 Before analyzing out single-cell data or building a model, we'll need to perform data preperation, which includes quality control, filtering, and normalization. First, we'll start with  quality control and inspect the integrity of our data and check if there are any missing values:
 
 ```python
@@ -210,7 +210,7 @@ Which produces the following output:
 
 As you can see in the output above, our AnnData object now contains 2187 cells and 2000 genes that exhibit the highest variability between cells.
 
-## Transformation and Dimensionality Reduction
+## 🧬 Transformation and Dimensionality Reduction
 As demonstrated above, single-cell RNA sequencing data is high-dimensional, consisting of thousands of genes measured across thousands of cells. High-dimensional data is challenging to analyze and interpret, so dimensionality reduction techniques are used to simplify the data by reducing the number of dimensions while simultaneously retaining the most important information in the dataset.
 
 In the code block below, I'll tranform the dataset using Z-transforamtoon which standardizes the data so that each gene has a mean of zero and a standard deviation of one. This reduces the influence of genes with extremely high expression levels and ensures that all genes contribute equally to downstream analyses. Following that, I'll  use a dimensionality reduction technique called principal component analysis (PCA), which reduces the dimensionality of the data while capturing most of the variance.
@@ -223,7 +223,7 @@ sc.pp.scale(adata_transposed, zero_center=True)
 sc.tl.pca(adata_transposed, svd_solver='arpack')
 ```
 
-## Building A Machine Learning Model To Predict Gene Expression
+## 🧬 Building A Machine Learning Model To Predict Gene Expression
 ### Data Preperation 
 First, we'll want to convert out AnnData object named ```adata_transposed``` into a DataFrame, which is the preffered data structure for many of the downstream analyses and processes we'll be performing. 
 
@@ -312,53 +312,109 @@ You can think of machine learning algorithms as systems with various knobs and d
 
 Parameters are model settings that are learned, adjusted, and optimized automatically. Conversely, hyperparameters need to be manually set manually by whoever is programming the machine learning algorithm. Generally, tuning hyperparameters has known effects on machine learning algorithms. However, it’s not always clear how to best set a hyperparameter to optimize model performance for a specific dataset. As a result, search strategies are often used to find optimal hyperparameter configurations. In the code block below, we'll use [random search](https://github.com/evanpeikon/Machine-Learning/tree/main/hyperparameter_optimization), which is a tuning technique that randomly samples a specified number of uniformly distributed algorithm parameters.
 
-```python
-from sklearn.model_selection import RandomizedSearchCV, KFold
-from sklearn.svm import SVR
-from sklearn.preprocessing import StandardScaler
-from sklearn.pipeline import Pipeline
-import numpy as np
-import pandas as pd
+> Note: the code below uses a subset of the dataset to tune hyperparameters to reduce computational cost and runtime. 
 
+```python
 # Define the SVR pipeline (scaler + SVR model)
 svr_pipeline = Pipeline([
     ('scaler', StandardScaler()),  # Scale features for better SVR performance
     ('model', SVR())
 ])
 
-# Define the hyperparameter space for random search
+# Define the hyperparameter space for random search (with reduced parameter range)
 param_distributions = {
-    'model__C': [0.1, 1, 10, 100, 1000],        # Regularization parameter
-    'model__epsilon': [0.001, 0.01, 0.1, 1],    # Epsilon parameter
-    'model__kernel': ['linear', 'poly', 'rbf'],  # Different kernel types
-    'model__gamma': ['scale', 'auto'],           # Gamma for RBF/poly kernels
+    'model__C': [0.1, 1, 10],               
+    'model__epsilon': [0.01, 0.1],        
+    'model__kernel': ['linear', 'rbf'],  
+    'model__gamma': ['scale', 'auto'],      
 }
 
-# Set up RandomizedSearchCV for SVR hyperparameter tuning
 random_search = RandomizedSearchCV(
-    estimator=svr_pipeline, 
-    param_distributions=param_distributions, 
-    n_iter=20,  # Number of random combinations to try
-    scoring='neg_mean_squared_error', 
-    cv=5,       # 5-fold cross-validation
-    random_state=5, 
-    verbose=1   # Shows progress
+    estimator=svr_pipeline,
+    param_distributions=param_distributions,
+    n_iter=10, 
+    scoring='neg_mean_squared_error',
+    cv=3,       
+    random_state=5,
+    verbose=1,
+    n_jobs=-1  
 )
 
 # Input values (X) - 1,950 genes as features
 X = df.iloc[:, :1950].values
 
-# Iterate over the last 50 output genes to perform tuning for each one
-for gene_index in range(1950, 2000):  # Iterate over the last 50 genes (outputs)
-    y = df.iloc[:, gene_index].values  # Target values (y) - each gene's expression
+# Subset of the data - Randomly sample 20% of the rows (cells)
+X_sub, _, y_sub, _ = train_test_split(X, df.iloc[:, 1950].values, test_size=0.8, random_state=5)
 
-    # Perform random search on the current gene
-    random_search.fit(X, y)
-    
-    # Print the best parameters and the corresponding MSE for the current gene
-    print(f"Best parameters for gene {gene_index}: {random_search.best_params_}")
-    print(f"Best MSE for gene {gene_index}: {-random_search.best_score_}")
+# Perform random search on the smaller subset
+random_search.fit(X_sub, y_sub)
+
+# Print the best parameters and the corresponding MSE for the smaller subset
+print(f"Best parameters on subset: {random_search.best_params_}")
+print(f"Best MSE on subset: {-random_search.best_score_}")
+```
+Which produces the following outputs:
+- Best parameters on subset: {'model__kernel': 'rbf', 'model__gamma': 'auto', 'model__epsilon': 0.01, 'model__C': 10}
+
+Now that we've have the optimal hyperparameters to optimize our models peformance, we can create pipeline. 
+
+### Creating A Pipeline 
+
+```python
+# Step 1: Separate the target genes (last 50 genes)
+target_genes_indices = list(range(1950, 2000))  # Adjust indices to extract the last 50 genes
+y = df.iloc[:, target_genes_indices].values  # Extract target genes as output (y)
+X = df.drop(columns=df.columns[target_genes_indices]).values  # Drop the target genes from input features (X)
+
+# Step 2: Split into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Step 3: Create a pipeline with preprocessing and model using optimal hyperparameters
+pipeline = Pipeline(steps=[
+    ('scaler', StandardScaler()),  # Step for scaling the features
+    ('model', MultiOutputRegressor(SVR(kernel='rbf', C=10, gamma='auto', epsilon=0.01)))  # SVM model with best hyperparameters
+])
+
+# Step 4: Fit the pipeline on the training data
+pipeline.fit(X_train, y_train)
+
+# Save the pipeline to a file for later use
+joblib.dump(pipeline, 'gene_expression_pipeline.pkl')
 ```
 
+To use the saved pipeline for predicting gene expression counts on a new dataset, you'll need to follow a few straightforward steps. Here’s how you can do it:
 
+Step-by-Step Instructions
+Load the Saved Pipeline: Use joblib to load the pipeline you previously saved.
+Prepare the New Dataset: Ensure that your new dataset is preprocessed in the same way as your training data (e.g., same feature columns, handling missing values if applicable).
+Make Predictions: Use the loaded pipeline to make predictions on the new data.
 
+```python
+# Step 1: Load the saved pipeline
+pipeline = joblib.load('gene_expression_pipeline.pkl')
+
+# Step 2: Load your new dataset (ensure it has the same feature structure as the training set)
+new_data = pd.read_csv('new_gene_expression_data.csv')
+
+# Step 3: Ensure the new dataset has the same features as your training data
+# For this example, we assume the new_data DataFrame has the same structure
+# You may need to drop target genes if they are present in the new dataset
+X_new = new_data.values  # Use the appropriate columns for your input features
+
+# Step 4: Make predictions on the new dataset
+predictions = pipeline.predict(X_new)
+
+# Step 5: Convert predictions to a DataFrame (optional)
+predictions_df = pd.DataFrame(predictions, columns=[f'Gene_{i}' for i in range(1, 51)])  # Adjust column names as necessary
+
+# Step 6: Save or display the predictions
+predictions_df.to_csv('predicted_gene_expression_counts.csv', index=False)
+print(predictions_df)
+```
+
+Key Points to Note
+Consistent Preprocessing: Ensure that the new dataset is preprocessed in the same way as your training data. This includes feature scaling, handling missing values, etc.
+Feature Columns: The new dataset should have the same feature columns used during the training of the model. If your training set had specific features (like the first 1,950 genes), your new dataset must maintain that structure.
+Saving Predictions: After making predictions, you may want to save the results to a CSV file or analyze them further.
+
+# 🧬 Conclusion
