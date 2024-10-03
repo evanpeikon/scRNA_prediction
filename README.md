@@ -312,10 +312,53 @@ You can think of machine learning algorithms as systems with various knobs and d
 
 Parameters are model settings that are learned, adjusted, and optimized automatically. Conversely, hyperparameters need to be manually set manually by whoever is programming the machine learning algorithm. Generally, tuning hyperparameters has known effects on machine learning algorithms. However, it’s not always clear how to best set a hyperparameter to optimize model performance for a specific dataset. As a result, search strategies are often used to find optimal hyperparameter configurations. In the code block below, we'll use [random search](https://github.com/evanpeikon/Machine-Learning/tree/main/hyperparameter_optimization), which is a tuning technique that randomly samples a specified number of uniformly distributed algorithm parameters.
 
+```python
+from sklearn.model_selection import RandomizedSearchCV, KFold
+from sklearn.svm import SVR
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+import numpy as np
+import pandas as pd
 
+# Define the SVR pipeline (scaler + SVR model)
+svr_pipeline = Pipeline([
+    ('scaler', StandardScaler()),  # Scale features for better SVR performance
+    ('model', SVR())
+])
 
+# Define the hyperparameter space for random search
+param_distributions = {
+    'model__C': [0.1, 1, 10, 100, 1000],        # Regularization parameter
+    'model__epsilon': [0.001, 0.01, 0.1, 1],    # Epsilon parameter
+    'model__kernel': ['linear', 'poly', 'rbf'],  # Different kernel types
+    'model__gamma': ['scale', 'auto'],           # Gamma for RBF/poly kernels
+}
 
+# Set up RandomizedSearchCV for SVR hyperparameter tuning
+random_search = RandomizedSearchCV(
+    estimator=svr_pipeline, 
+    param_distributions=param_distributions, 
+    n_iter=20,  # Number of random combinations to try
+    scoring='neg_mean_squared_error', 
+    cv=5,       # 5-fold cross-validation
+    random_state=5, 
+    verbose=1   # Shows progress
+)
 
+# Input values (X) - 1,950 genes as features
+X = df.iloc[:, :1950].values
+
+# Iterate over the last 50 output genes to perform tuning for each one
+for gene_index in range(1950, 2000):  # Iterate over the last 50 genes (outputs)
+    y = df.iloc[:, gene_index].values  # Target values (y) - each gene's expression
+
+    # Perform random search on the current gene
+    random_search.fit(X, y)
+    
+    # Print the best parameters and the corresponding MSE for the current gene
+    print(f"Best parameters for gene {gene_index}: {random_search.best_params_}")
+    print(f"Best MSE for gene {gene_index}: {-random_search.best_score_}")
+```
 
 
 
