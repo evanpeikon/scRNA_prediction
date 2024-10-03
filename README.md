@@ -1,5 +1,5 @@
-# 🧬 Project Overview: Predicting Gene Expression to Optimize Exercise Science Research
-
+# 🧬 Project Overview
+## Background
 Physiological responses to exercise are generally predictable. For example, resistance training leads to increased strength and muscle hypertrophy, while endurance training improves aerobic capacity. However, modern exercise science still struggles to determine the optimal combination of volume, intensity, duration, frequency, and timing of exercise stimuli to maximize an individual’s health, fitness, and performance outcomes.
 
 As George Brooks, a pioneer in the field, aptly put it:
@@ -16,8 +16,11 @@ This is beginning to change with the application of single-cell RNA sequencing (
 
 However, scRNA-seq studies are still limited in scope (the specific problems they address) and breadth (the number of subjects and samples they can analyze). A key constraint is funding, as sequencing costs rise significantly with the number of subjects and the depth of sequencing required to capture more gene expression data. The more genes researchers aim to measure, the more library preparation and sequencing depth is needed—driving up costs exponentially.
 
-## Project Goal
+## Project Goals
 The goal of this project is to explore whether we can predict the expression of a subset of genes in skeletal muscle cells using the expression levels of other genes as input to a predictive model. If successful, this approach could allow researchers to capture more samples before and after exercise with lower sequencing depth, reducing costs. By imputing or predicting gene expression levels, exercise scientists could gain deeper insights into the body’s adaptive responses to training.
 
 While this method may not achieve the level of precision required for clinical or high-level bioinformatics research, it could provide a valuable tool for exercise scientists seeking to understand how different exercise stimuli affect gene expression. Additionally, there may be potential applications in high-performance sports, where athletes and coaches aim to optimize training regimens to maximize adaptation rates through variations in volume, intensity, and frequency.
+
+# 🧬 Project Walkthrough
+## Data Availability 
 
