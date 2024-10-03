@@ -229,14 +229,13 @@ First, we'll want to convert out AnnData object named ```adata_transposed``` int
 
 ```python
 # Convert expression matrix (adata_transposed.X) to a DataFrame using adata_transposed.obs_names as row labels (cell names) and adata_transposed.var_names as column labels (gene names)
-
 df = pd.DataFrame(adata_transposed.X, index=adata_transposed.obs_names, columns=adata_transposed.var_names)
 ```
 
 After the above process, we now have a DataFrame with 2876 rows, representing individual cells, and 2,000 columns with one for each gene in our dataset. Now, before evaluating different machine learning models on our dataset, we need to split our dataset in inputs and outputs. In this case, our inputs will be the first 1,950 genes in our dataset's expression levels/ 
 
 ```python
-# Inputs: First 1,950 genes
+# first 1,950 genes as inputs to model
 X = df.iloc[:, :1950].values
 ```
 
@@ -248,7 +247,7 @@ Unfortunately, we can't always know which algorithm will work best on our datase
 Spot-checking is a way to quickly discover which algorithms perform well on our machine-learning problem before selecting one to commit to. In the code block we'll we'll spot check six regression algoritms using the same [evaluation method](https://github.com/evanpeikon/machine-learning/tree/main/resampling) and [evaluation metric](https://github.com/evanpeikon/Machine-Learning/tree/main/Regression-metrics) to compare the model's performance. 
 
 ```python
-# Models for comparison 
+# select model for spot-checking
 models = {
     'LR': Pipeline([('scaler', StandardScaler()), ('model', LinearRegression())]),
     'Ridge': Pipeline([('scaler', StandardScaler()), ('model', Ridge())]),
@@ -257,45 +256,28 @@ models = {
     'CART': Pipeline([('model', DecisionTreeRegressor())]),
     'SVM': Pipeline([('scaler', StandardScaler()), ('model', SVR())]),}
 
-# List to store results for each model
+# list to store results for each model
 results = []
 
-# Cross-validation
+# iterate over the last 50 output genes and calculate average MSE for each model
 kfold = KFold(n_splits=5, random_state=5, shuffle=True)
-
-# Iterate over the last 50 output genes and calculate average MSE for each model
 for name, model in models.items():
-    all_mse = []  # List to store MSE for each gene for this model
-    
-    for gene_index in range(1950, 2000):  # Iterate over the last 50 genes (outputs)
+    all_mse = []
+    for gene_index in range(1950, 2000):
         y = df.iloc[:, gene_index].values
-        
-        # Cross-validation for the current model and gene
         cv_results = cross_val_score(model, X, y, cv=kfold, scoring='neg_mean_squared_error')
-        
-        # Store the MSE (convert negative MSE to positive)
         all_mse.append(-cv_results.mean())
-
-    # Calculate the average MSE across the 50 genes for the current model
     avg_mse = np.mean(all_mse)
     std_mse = np.std(all_mse)
-    
-    # Store the results for this model
-    results.append({
-        'Model': name,
-        'Mean_MSE': avg_mse,
-        'Std_MSE': std_mse})
+    results.append({'Model': name, 'Mean_MSE': avg_mse, 'Std_MSE': std_mse})
 
-# Convert results list to DataFrame
+# convert results list to DF and display DF
 results_df = pd.DataFrame(results)
-
-# Display the average results DataFrame
 print(results_df)
 
-# Visualize the average performance of each model across all genes
+# visualize the average performance of each model across all genes
 plt.figure(figsize=(10, 6))
 plt.barh(results_df['Model'], results_df['Mean_MSE'], xerr=results_df['Std_MSE'], capsize=5)
-plt.title('Average Model Comparison Across 50 Output Genes')
 plt.xlabel('Mean MSE')
 plt.ylabel('Model')
 plt.grid(axis='x')
@@ -315,41 +297,24 @@ Parameters are model settings that are learned, adjusted, and optimized automati
 > Note: the code below uses a subset of the dataset to tune hyperparameters to reduce computational cost and runtime. 
 
 ```python
-# Define the SVR pipeline (scaler + SVR model)
-svr_pipeline = Pipeline([
-    ('scaler', StandardScaler()),  # Scale features for better SVR performance
-    ('model', SVR())
-])
+# define the SVR pipeline
+svr_pipeline = Pipeline([('scaler', StandardScaler()), ('model', SVR())])
 
-# Define the hyperparameter space for random search (with reduced parameter range)
-param_distributions = {
-    'model__C': [0.1, 1, 10],               
-    'model__epsilon': [0.01, 0.1],        
-    'model__kernel': ['linear', 'rbf'],  
-    'model__gamma': ['scale', 'auto'],      
-}
+# define the hyperparameter space for random search w/ reduced parameter range
+param_distributions = {'model__C': [0.1, 1, 10], 'model__epsilon': [0.01, 0.1], 'model__kernel': ['linear', 'rbf'], 'model__gamma': ['scale', 'auto'],}
 
-random_search = RandomizedSearchCV(
-    estimator=svr_pipeline,
-    param_distributions=param_distributions,
-    n_iter=10, 
-    scoring='neg_mean_squared_error',
-    cv=3,       
-    random_state=5,
-    verbose=1,
-    n_jobs=-1  
-)
+random_search = RandomizedSearchCV(estimator=svr_pipeline, param_distributions=param_distributions, n_iter=10, scoring='neg_mean_squared_error', cv=3, random_state=5, verbose=1, n_jobs=-1)
 
-# Input values (X) - 1,950 genes as features
+# input values
 X = df.iloc[:, :1950].values
 
-# Subset of the data - Randomly sample 20% of the rows (cells)
+# randomly sample 20% of the rows
 X_sub, _, y_sub, _ = train_test_split(X, df.iloc[:, 1950].values, test_size=0.8, random_state=5)
 
-# Perform random search on the smaller subset
+# perform random search on the smaller subset
 random_search.fit(X_sub, y_sub)
 
-# Print the best parameters and the corresponding MSE for the smaller subset
+# print the best parameters
 print(f"Best parameters on subset: {random_search.best_params_}")
 print(f"Best MSE on subset: {-random_search.best_score_}")
 ```
@@ -361,24 +326,23 @@ Now that we've have the optimal hyperparameters to optimize our models peformanc
 ### Creating A Pipeline 
 
 ```python
-# Step 1: Separate the target genes (last 50 genes)
-target_genes_indices = list(range(1950, 2000))  # Adjust indices to extract the last 50 genes
-y = df.iloc[:, target_genes_indices].values  # Extract target genes as output (y)
-X = df.drop(columns=df.columns[target_genes_indices]).values  # Drop the target genes from input features (X)
+# separate the target genes (last 50 genes)
+target_genes_indices = list(range(1950, 2000))
+y = df.iloc[:, target_genes_indices].values
+X = df.drop(columns=df.columns[target_genes_indices]).values
 
-# Step 2: Split into training and testing sets
+# split into training and testing sets
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Step 3: Create a pipeline with preprocessing and model using optimal hyperparameters
+# ceate a pipeline with preprocessing and model using optimal hyperparameters
 pipeline = Pipeline(steps=[
-    ('scaler', StandardScaler()),  # Step for scaling the features
-    ('model', MultiOutputRegressor(SVR(kernel='rbf', C=10, gamma='auto', epsilon=0.01)))  # SVM model with best hyperparameters
-])
+    ('scaler', StandardScaler()),
+    ('model', MultiOutputRegressor(SVR(kernel='rbf', C=10, gamma='auto', epsilon=0.01)))])
 
-# Step 4: Fit the pipeline on the training data
+# fit the pipeline on the training data
 pipeline.fit(X_train, y_train)
 
-# Save the pipeline to a file for later use
+# save the pipeline to a file for later use
 joblib.dump(pipeline, 'gene_expression_pipeline.pkl')
 ```
 
@@ -389,32 +353,5 @@ Load the Saved Pipeline: Use joblib to load the pipeline you previously saved.
 Prepare the New Dataset: Ensure that your new dataset is preprocessed in the same way as your training data (e.g., same feature columns, handling missing values if applicable).
 Make Predictions: Use the loaded pipeline to make predictions on the new data.
 
-```python
-# Step 1: Load the saved pipeline
-pipeline = joblib.load('gene_expression_pipeline.pkl')
-
-# Step 2: Load your new dataset (ensure it has the same feature structure as the training set)
-new_data = pd.read_csv('new_gene_expression_data.csv')
-
-# Step 3: Ensure the new dataset has the same features as your training data
-# For this example, we assume the new_data DataFrame has the same structure
-# You may need to drop target genes if they are present in the new dataset
-X_new = new_data.values  # Use the appropriate columns for your input features
-
-# Step 4: Make predictions on the new dataset
-predictions = pipeline.predict(X_new)
-
-# Step 5: Convert predictions to a DataFrame (optional)
-predictions_df = pd.DataFrame(predictions, columns=[f'Gene_{i}' for i in range(1, 51)])  # Adjust column names as necessary
-
-# Step 6: Save or display the predictions
-predictions_df.to_csv('predicted_gene_expression_counts.csv', index=False)
-print(predictions_df)
-```
-
-Key Points to Note
-Consistent Preprocessing: Ensure that the new dataset is preprocessed in the same way as your training data. This includes feature scaling, handling missing values, etc.
-Feature Columns: The new dataset should have the same feature columns used during the training of the model. If your training set had specific features (like the first 1,950 genes), your new dataset must maintain that structure.
-Saving Predictions: After making predictions, you may want to save the results to a CSV file or analyze them further.
 
 # 🧬 Conclusion
