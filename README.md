@@ -22,6 +22,9 @@ The goal of this project is to explore whether we can predict the expression of 
 While this method may not achieve the level of precision required for clinical or high-level bioinformatics research, it could provide a valuable tool for exercise scientists seeking to understand how different exercise stimuli affect gene expression. Additionally, there may be potential applications in high-performance sports, where athletes and coaches aim to optimize training regimens to maximize adaptation rates through variations in volume, intensity, and frequency.
 
 # 🧬 Project Walkthrough
+
+<img width="550" alt="Screenshot 2024-10-03 at 2 04 17 PM" src="https://github.com/user-attachments/assets/0b25e35f-0d93-4a9d-acc3-ca1d5a724552">
+
 ## 🧬 Data Availability 
 The data for this project comes from a study called "Single-cell transcriptional profiles in human skeletal muscle," which is accessible via the Gene Expression Omnibus (GEO) via the following accession number: [GSE130646](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi). 
 
