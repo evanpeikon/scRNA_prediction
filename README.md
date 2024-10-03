@@ -1,8 +1,6 @@
 # 🧬 Project Overview
 ## 🧬 Background
-Physiological responses to exercise are generally predictable. For example, resistance training leads to increased strength and muscle hypertrophy, while endurance training improves aerobic capacity. However, modern exercise science still struggles to determine the optimal combination of volume, intensity, duration, frequency, and timing of exercise stimuli to maximize an individual’s health, fitness, and performance outcomes.
-
-As George Brooks, a pioneer in the field, aptly put it:
+Physiological responses to exercise are generally predictable. For example, resistance training leads to increased strength and muscle hypertrophy, while endurance training improves aerobic capacity. However, modern exercise science still struggles to determine the optimal combination of volume, intensity, duration, frequency, and timing of exercise stimuli to maximize an individual’s health, fitness, and performance outcomes. As George Brooks, a pioneer in the field, aptly put it:
 > “It is wise to note that we are all individuals and that whereas physiological responses to particular stimuli are largely predictable, the precise responses and adaptations to those stimuli will vary among individuals. Therefore, the same training regimen may not equally benefit all those who follow it.”
 
 Despite ongoing research, the field of exercise science has made limited progress since the early 2000s in refining these principles to account for individual variability. Achieving a deeper understanding of personalized, dose-response optimized exercise will require rigorous and systematic research that:
@@ -12,9 +10,7 @@ Despite ongoing research, the field of exercise science has made limited progres
 
 Unfortunately, many exercise science studies are underpowered, lack proper controls, or suffer from limited funding, making it challenging to address these issues comprehensively. Another significant limitation is that most studies only measure broad end-responses to training (e.g., increases in strength or endurance) rather than examining the molecular changes driving these adaptations.
 
-This is beginning to change with the application of single-cell RNA sequencing (scRNA-seq) techniques in skeletal muscle and exercise research. scRNA-seq allows for the analysis of gene expression at a single-cell level, providing a granular view of how different cell types within muscle tissue respond to exercise. The technique is valuable because it can capture the heterogeneity in cell populations, offering insights into specific gene expression patterns and molecular pathways involved in exercise adaptations.
-
-However, scRNA-seq studies are still limited in scope (the specific problems they address) and breadth (the number of subjects and samples they can analyze). A key constraint is funding, as sequencing costs rise significantly with the number of subjects and the depth of sequencing required to capture more gene expression data. The more genes researchers aim to measure, the more library preparation and sequencing depth is needed—driving up costs exponentially.
+This is beginning to change with the application of single-cell RNA sequencing (scRNA-seq) techniques in skeletal muscle and exercise research. scRNA-seq allows for the analysis of gene expression at a single-cell level, providing a granular view of how different cell types within muscle tissue respond to exercise. The technique is valuable because it can capture the heterogeneity in cell populations, offering insights into specific gene expression patterns and molecular pathways involved in exercise adaptations. However, available scRNA-seq studies in exercise science are still limited in scope (the specific problems they address) and breadth (the number of subjects and samples they can analyze). A key constraint is funding, as sequencing costs rise significantly with the number of subjects and the depth of sequencing required to capture more gene expression data. The more genes researchers aim to measure, the more library preparation and sequencing depth is needed—driving up costs exponentially.
 
 ## 🧬 Project Goals
 The goal of this project is to explore whether we can predict the expression of a subset of genes in skeletal muscle cells using the expression levels of other genes as input to a predictive model. If successful, this approach could allow researchers to capture more samples before and after exercise with lower sequencing depth, reducing costs. By imputing or predicting gene expression levels, exercise scientists could gain deeper insights into the body’s adaptive responses to training.
@@ -50,7 +46,7 @@ import joblib
 ```
 
 ## 🧬 Load, Prepare, and Inspect Data
-Next, we'll use Bash's wget command to retrieve each subject's Single-cell RNA-seq data, and following that, we'll use the Bash gunzip command to decompress the files:
+Next, we'll use Bash's ```wget``` command to retrieve each subject's Single-cell RNA-seq data, and following that, we'll use the Bash ```gunzip``` command to decompress the files:
 
 ```bash
 # retrieve subect data from GEO
@@ -66,7 +62,7 @@ Next, we'll use Bash's wget command to retrieve each subject's Single-cell RNA-s
 !gunzip GSM3746215_Muscle_4_Counts.csv.gz
 ```
 
-Now that we've decompressed the CSV files, we'll read them using the Pandas read_csv() function. Following that, we'll convert each CSV file into an individual AnnData object before combining them into a single composite object named adata_combined:
+Now that we've decompressed the CSV files, we'll read them using the Pandas ```read_csv()``` function. Following that, we'll convert each CSV file into an individual AnnData object before combining them into a single composite object named adata_combined:
 
 ```python
 # read and save subject data as CSV
@@ -89,14 +85,14 @@ adata_combined = sc.concat(adatas, axis=1, label='sample', keys=['muscle_1', 'mu
 adata_combined.var_names_make_unique()
 ```
 
-We now have a composite AnnData object storing all of our subject's data. However, this composite object is formatted such that the rows are genes and the columns are cell IDs. As a result, we need to transpose our AnnData object so the rows are cell IDs and the columns are genes since this is the conventional format used for analyzing scRNA-seq data:
+We now have a composite AnnData object storing all of our subject's data. However, this composite object is formatted such that the rows are genes and the columns are cell IDs. As a result, we need to transpose our AnnData object so the rows are cell IDs and the columns are genes since this is the conventional format used for analyzing scRNA-seq data.
 
 ```python
 # transpose AnnData object
 adata_transposed = sc.AnnData(adata_combined.T)
 ```
 
-Notably, I've saved the newly transposed AnnData object as adata_transposed, and as a result, all downstream analysis will use this newly created AnnData object instead of our original variable, adata_combined. Now, I'll print some basic summary information about our new AnnData object:
+Notably, I've saved the newly transposed AnnData object as ```adata_transposed```, and as a result, all downstream analysis will use this newly created AnnData object instead of our original variable, ```adata_combined```. Now, I'll print some basic summary information about our new AnnData object:
 
 ```python
 num_genes = adata_transposed.n_vars # variables = columns (genes)
@@ -110,7 +106,7 @@ Which produces the following output:
   - Number of Cells: 2876
 
 ## 🧬 Data Preperation
-Before analyzing out single-cell data or building a model, we'll need to perform data preperation, which includes quality control, filtering, and normalization. First, we'll start with  quality control and inspect the integrity of our data and check if there are any missing values:
+Before analyzing out single-cell data or building our model, we'll need to prepare our data, which includes performing quality control, with the requiste level of filtering, and normalization. First, we'll start with  quality control and inspect the integrity of our data and check if there are any missing values .
 
 ```python
 # find indices of rows (cell IDs) with NaN values
@@ -192,9 +188,7 @@ Which produces the following output:
   - Number of Genes: 10485
   - Number of Cells: 2876
 
-As you can see in the output above, filtering our cells with fewer than 200 detected genes removed 4921 genes from the dataset, a 30% reduction in the number of genes present. However, our filtering criteria did not remove any cells from the dataset.
-
-Following filtering, I'll apply global-scaling normalization, which consists of dividing each gene's expression level by the total expression in that cell, multiplying the result by a scaling factor to standardize the values, and then applying a log transformation to stabilize the variance. Then, following that, I'll identify the 2000 most highly variable genes in our dataset, which are useful for predicting unknown genes expression levels, and remove all other genes from the AnnData object:
+As you can see in the output above, filtering our cells with fewer than 200 detected genes removed 4921 genes from the dataset, a 30% reduction in the number of genes present. However, our filtering criteria did not remove any cells from the dataset. Following filtering, we'll apply global-scaling normalization, which consists of dividing each gene's expression level by the total expression in that cell, multiplying the result by a scaling factor to standardize the values, and then applying a log transformation to stabilize the variance. Then, following that, we'll identify the 2000 most highly variable genes in our dataset, which are useful for predicting unknown genes expression levels, and remove all other genes from the AnnData object.
 
 ```python
 # apply global-scaling normalization
@@ -225,14 +219,14 @@ sc.tl.pca(adata_transposed, svd_solver='arpack')
 
 ## 🧬 Building A Machine Learning Model To Predict Gene Expression
 ### Data Preperation 
-First, we'll want to convert out AnnData object named ```adata_transposed``` into a DataFrame, which is the preffered data structure for many of the downstream analyses and processes we'll be performing. 
+Before we can begin building a model to predict gene expression levels we'll need to convert our AnnData object named ```adata_transposed``` into a DataFrame, which is the preffered data structure for many of the downstream analyses and processes we'll be performing. 
 
 ```python
 # Convert expression matrix (adata_transposed.X) to a DataFrame using adata_transposed.obs_names as row labels (cell names) and adata_transposed.var_names as column labels (gene names)
 df = pd.DataFrame(adata_transposed.X, index=adata_transposed.obs_names, columns=adata_transposed.var_names)
 ```
 
-After the above process, we now have a DataFrame with 2876 rows, representing individual cells, and 2,000 columns with one for each gene in our dataset. Now, before evaluating different machine learning models on our dataset, we need to split our dataset in inputs and outputs. In this case, our inputs will be the first 1,950 genes in our dataset's expression levels/ 
+After the above process, we now have a DataFrame with 2876 rows, representing individual cells, and 2,000 columns with one for each gene in our dataset. Now, before evaluating different machine learning models on our dataset, we need to split our dataset in inputs and outputs. In this case, the input for our model will be the first 1,950 genes in the dataset and their associated expression levels for each cell. 
 
 ```python
 # first 1,950 genes as inputs to model
@@ -240,9 +234,7 @@ X = df.iloc[:, :1950].values
 ```
 
 ### Algorithm Spot-Checking
-Now, any machine learning problem, we must select an algorithm to make predictions, an evaluation method to estimate a model's performance on unseen data, and an evaluation metric(s) to quantify how well the model works.
-
-Unfortunately, we can't always know which algorithm will work best on our dataset beforehand. As a result, we have to try several algorithms, then focus our attention on those that seem most promising. Thus, it's important to have quick and easy ways to assess and compare different algorithms' performance before we select one to tune and optimize - this is where spot-checking comes in.
+Now, for any machine learning problem, we need to select an algorithm to make predictions, an evaluation method to estimate a model's performance on unseen data, and an evaluation metric to quantify how well the model works. Unfortunately, we can't always know which algorithm will work best on our dataset beforehand. As a result, we have to try several algorithms, then focus our attention on those that seem most promising. Thus, it's important to have quick and easy ways to assess and compare different algorithms' performance before we select one to tune and optimize - this is where spot-checking comes in.
 
 Spot-checking is a way to quickly discover which algorithms perform well on our machine-learning problem before selecting one to commit to. In the code block we'll we'll spot check six regression algoritms using the same [evaluation method](https://github.com/evanpeikon/machine-learning/tree/main/resampling) and [evaluation metric](https://github.com/evanpeikon/Machine-Learning/tree/main/Regression-metrics) to compare the model's performance. 
 
@@ -287,14 +279,16 @@ Which produces the following output:
 
 <img width="611" alt="Screenshot 2024-10-03 at 12 19 14 PM" src="https://github.com/user-attachments/assets/7c89e084-e2dd-4001-ab19-009358c4918c">
 
-As you can see in the image above, support vector regresson (SVR) outperformed all other algorithms with the lowest average mean squarred error (MSE) across the 50 output gene's expression levels we are aiming to predict. A potential reason for this is that SVR is well-suited for handling handling high-dimensional, and noisy, data which are common characteristics of gene expression datasets. Additioanlly, SVR may capture complex relationships between genes that linear models like linear regression (which was the worst performing mode) may miss. SVR's regularization techniques also help prevent overfitting, ensuring that the model generalizes well to new data, which is critical for the use case described in the project overview section above. 
+As you can see in the image above, support vector regresson (SVR) outperformed all other algorithms with the lowest average mean squarred error (MSE) across the 50 output gene's expression levels we are aiming to predict. A potential reason for this is that SVR is well-suited for handling handling high-dimensional, and noisy, data which are common characteristics of scRNA-seq datasets. Additioanlly, SVR may capture complex relationships between genes that linear models like linear regression (which was the worst performing mode) may miss. SVR's regularization techniques also help prevent overfitting, ensuring that the model generalizes well to new data, which is critical for the use case described in the project overview section above. 
+
+Now that we've selected the best performing model, we'll want to perform hyperparameter optimization, or tuning, to enhance it's performance furher. 
 
 ### Hyperparameter Tuning 
 You can think of machine learning algorithms as systems with various knobs and dials, which you can adjust in any number of ways to change how output data (predictions) are generated from input data. The knobs and dials in these systems can be subdivided into parameters and hyperparameters.
 
-Parameters are model settings that are learned, adjusted, and optimized automatically. Conversely, hyperparameters need to be manually set manually by whoever is programming the machine learning algorithm. Generally, tuning hyperparameters has known effects on machine learning algorithms. However, it’s not always clear how to best set a hyperparameter to optimize model performance for a specific dataset. As a result, search strategies are often used to find optimal hyperparameter configurations. In the code block below, we'll use [random search](https://github.com/evanpeikon/Machine-Learning/tree/main/hyperparameter_optimization), which is a tuning technique that randomly samples a specified number of uniformly distributed algorithm parameters.
+Parameters are model settings that are learned, adjusted, and optimized automatically. Conversely, hyperparameters need to be manually set manually by whoever is programming the machine learning algorithm. Generally, tuning hyperparameters has known effects on machine learning algorithms. However, it’s not always clear how to best set a hyperparameter to optimize model performance for a specific dataset. As a result, search strategies are often used to find optimal hyperparameter configurations. In the code block below, we'll use [random search](https://github.com/evanpeikon/Machine-Learning/tree/main/hyperparameter_optimization), which is a tuning technique that randomly samples a specified number of uniformly distributed algorithm parameters to find the one that best enhances our models performance. 
 
-> Note: the code below uses a subset of the dataset to tune hyperparameters to reduce computational cost and runtime. 
+> Note: The code below uses a subset of the dataset to tune hyperparameters to reduce computational cost and runtime. As a result, it's possible that the hyperparameters can be further tuned and optimized. 
 
 ```python
 # define the SVR pipeline
@@ -321,9 +315,10 @@ print(f"Best MSE on subset: {-random_search.best_score_}")
 Which produces the following outputs:
 - Best parameters on subset: {'model__kernel': 'rbf', 'model__gamma': 'auto', 'model__epsilon': 0.01, 'model__C': 10}
 
-Now that we've have the optimal hyperparameters to optimize our models peformance, we can create pipeline. 
+Now that we've have the optimal hyperparameters to optimize our models peformance, we can create pipeline to automate the workflow for future use cases. 
 
 ### Creating A Pipeline 
+A machine learning pipeline is a organized sequence that automates the multi-step workflow from raw data to a predicive model. By structuring these steps into a pipeline, we can streamline the modeling process, ensuring consistency, reproducibility, and efficiency. Additionally, pipelines allow for easy experimentation with different models and preprocessing techniques, making it simpler to iterate and improve upon machine learning solutions. In the code below I've created a simple pipeline for the model above. 
 
 ```python
 # separate the target genes (last 50 genes)
@@ -346,15 +341,9 @@ pipeline.fit(X_train, y_train)
 joblib.dump(pipeline, 'gene_expression_pipeline.pkl')
 ```
 
-To use the saved pipeline for predicting gene expression counts on a new dataset, you'll need to follow a few straightforward steps. Here’s how you can do it:
-
-Step-by-Step Instructions
-Load the Saved Pipeline: Use joblib to load the pipeline you previously saved.
-Prepare the New Dataset: Ensure that your new dataset is preprocessed in the same way as your training data (e.g., same feature columns, handling missing values if applicable).
-Make Predictions: Use the loaded pipeline to make predictions on the new data.
-
+Now, to use the pipeline above for predicting gene expression levls on a new dataset you'll need to follow the following steps. First, you'll need to use joblid to load the piepeline above (assuming you've executed all of the sequential code blocks above). Then, you'll need to prepare a new dataset, ensuring that it is preprocessed the same way as your training data (ie, same feature columns, etc). Then, you can use the loaded pipeline to make predictions on the new data. 
 
 # 🧬 Conclusion
 This project demonstrates the potential of our predictive model for predicting gene expression and achieving the broader objectives discussed in the project overview above. However, to enhance its utility in practical applications, it is crucial to gather more training data and develop a more modular framework that can be tailored to specific study or field-based requirements. Additionally, there are several improvements I envision for future iterations that could significantly bolster the model’s robustness and broaden its applicability. Unfortunately, due to computational and resource constraints, these enhancements were not feasible within the scope of this project. One notable direction for future work would be to cluster skeletal muscle cells based on known marker genes, then to create individual models to predict gene expression for each cell type. This approach could potentially enhance the model's accuracy and overall utility.
 
-I welcome any suggestions for improvements, alternative approaches, or ideas for extending this project. Please feel free to reach out to me at evanpeikon@gmail.com. 
+> I welcome any suggestions for improvements, alternative approaches, or ideas for extending this project. Please feel free to reach out to me at evanpeikon@gmail.com. 
