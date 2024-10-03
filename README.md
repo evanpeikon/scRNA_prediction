@@ -358,3 +358,6 @@ Make Predictions: Use the loaded pipeline to make predictions on the new data.
 
 
 # 🧬 Conclusion
+This project demonstrates the potential of our predictive model for predicting gene expression and achieving the broader objectives discussed in the project overview above. However, to enhance its utility in practical applications, it is crucial to gather more training data and develop a more modular framework that can be tailored to specific study or field-based requirements. Additionally, there are several improvements I envision for future iterations that could significantly bolster the model’s robustness and broaden its applicability. Unfortunately, due to computational and resource constraints, these enhancements were not feasible within the scope of this project. One notable direction for future work would be to cluster skeletal muscle cells based on known marker genes, then to create individual models to predict gene expression for each cell type. This approach could potentially enhance the model's accuracy and overall utility.
+
+I welcome any suggestions for improvements, alternative approaches, or ideas for extending this project. Please feel free to reach out to me at evanpeikon@gmail.com. 
